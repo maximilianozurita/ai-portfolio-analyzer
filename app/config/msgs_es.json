@@ -16,5 +16,7 @@
 	"ERROR_ACCIONES_INSUFICIENTES" : "No hay suficientes acciones para eliminar, acciones actuales: {}, acciones a eliminar: {}.",
 	"STOCK_UPDATED" : "Se actualizo stock.",
 	"STOCK_ADDED" : "Se agrego stock",
-	"STOCK_DELETED": "Se elimino stock"
+	"STOCK_DELETED": "Se elimino stock",
+	"ELEMENTO_ENCONTRADO": "Elemento '{}' encontrado",
+	"TRANSACCION_REVERTIDA": "Transaccion revertida con exito"
 }

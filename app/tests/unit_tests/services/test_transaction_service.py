@@ -32,7 +32,7 @@ class TestTransactionService(TestBase):
 	def test_get_transaction_by_id(self):
 		transaction = self.factory.get_new("Transaction")
 		response_expected = {
-			'msg': msgs.get_message("ELEMENTO_ELIMINADO", [transaction.id]),
+			'msg': msgs.get_message("ELEMENTO_ENCONTRADO", [transaction.id]),
 			'ok': True,
 			'data': transaction.get_attr_dict()
 		}

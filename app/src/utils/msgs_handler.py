@@ -13,17 +13,13 @@ class msgsHandler:
 			message = self.messages.get(key, "Unknown error")
 			count_params = message.count('{}')
 			if len(params) == count_params and len(params) != 0:
-				message = message.format(*params) #Para reemplazar valores dinamicos
+				message = message.format(*params)
 			elif (len(params) > count_params):
-				print("Hay params de mas")
 				message = ''
 			elif (len(params) < count_params):
-				print("Falta params")
 				message = ''
 		else:
-			print("Params no es un array")
 			message = ''
-		print(message)
 		return message
 
 	@staticmethod
@@ -41,5 +37,3 @@ class msgsHandler:
 		for key, values in errors.items():
 			for params in values:
 				print(msgs.get_message(key, params))
-
-

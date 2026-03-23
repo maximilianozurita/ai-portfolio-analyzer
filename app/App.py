@@ -1,10 +1,14 @@
 from flask import Flask
-from app.src.resources.stocks import stocks
-from app.src.resources.transactions import stransactions
+from flask_cors import CORS
+from src.routes.stocks import stock as stocks_bp
+from src.routes.transactions import stock as transactions_bp
+from src.routes.tickets import ticket_bp
 
 app = Flask(__name__)
-app.register_blueprint(stocks)
-app.register_blueprint(stransactions)
+CORS(app)
+app.register_blueprint(stocks_bp)
+app.register_blueprint(transactions_bp)
+app.register_blueprint(ticket_bp)
 
 if __name__ == '__main__':
 	app.run(debug=True, port=5000)

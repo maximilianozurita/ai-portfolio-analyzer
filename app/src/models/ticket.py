@@ -19,6 +19,7 @@ class Ticket:
 			attrs = ', '.join(f'{attr}={getattr(self, attr)}' for attr in vars(self))
 			return self.__class__.__name__ + f'({attrs})'
 
+	@staticmethod
 	def find_all():
 		conector = ConectorBase()
 		tickets = []
@@ -28,6 +29,7 @@ class Ticket:
 			tickets.append(Ticket(fila["ticket_code"], fila))
 		return tickets
 
+	@staticmethod
 	def find_one():
 		conector = ConectorBase()
 		query = "SELECT t.* from " + Ticket._tabla + " t left join stock s on (t.ticket_code = s.ticket_code) where s.ticket_code is null limit 1"
@@ -36,6 +38,7 @@ class Ticket:
 			return Ticket(attrs_expected["ticket_code"])
 		return None
 
+	@staticmethod
 	def load_data(ticket_code):
 		conector = ConectorBase()
 		query = "SELECT * from " + Ticket._tabla + " WHERE ticket_code = %s"

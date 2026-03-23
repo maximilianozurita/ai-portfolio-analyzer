@@ -79,7 +79,7 @@ class Stock(MainClass):
 		attrs_data, errors = Stock.verify(data)
 		if len(errors) == 0:
 			conector = ConectorBase()
-			columns, values = Stock.get_query_params(data)
+			columns, values = Stock.get_query_params(attrs_data)
 			query = "INSERT INTO " + Stock._table + " (" + ','.join(columns) + ") VALUES (" + ', '.join(['%s'] * len(columns)) + ")"
 			attrs_data["id"] = conector.execute_query(query, values)
 			return Stock(attrs_data), None

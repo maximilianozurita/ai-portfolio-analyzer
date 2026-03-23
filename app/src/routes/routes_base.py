@@ -1,6 +1,6 @@
 from flask import jsonify
 
-def create_response(status: str, r):
+def create_response(r):
 	response = {
 		"status": "Success" if r.get("ok") else "Error",
 		"message": r.get("msg") or "",
