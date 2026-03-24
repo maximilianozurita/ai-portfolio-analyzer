@@ -1,9 +1,14 @@
 from tests.factory.stock_factory import StockFactory
 from tests.factory.transaction_factory import TransactionFactory
+from tests.factory.bond_holding_factory import BondHoldingFactory
+from tests.factory.bond_transaction_factory import BondTransactionFactory
+
 class FactoryRegister:
 	_class = {
 		"Stock": StockFactory,
-		"Transaction" : TransactionFactory
+		"Transaction": TransactionFactory,
+		"BondHolding": BondHoldingFactory,
+		"BondTransaction": BondTransactionFactory,
 	}
 	def __init__(self):
 		self.created_objects = []

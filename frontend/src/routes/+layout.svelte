@@ -6,12 +6,14 @@
 		{ href: '/dashboard', label: 'Dashboard' },
 		{ href: '/stocks', label: 'Holdings' },
 		{ href: '/transactions', label: 'Transacciones' },
-		{ href: '/transactions/new', label: 'Nueva Transacción' }
+		{ href: '/transactions/new', label: 'Nueva Transacción' },
+		{ href: '/bonds', label: 'Bonos' },
+		{ href: '/bond-transactions/new', label: 'Nueva Op. Bono' }
 	];
 </script>
 
-<div class="min-h-screen bg-gray-50 flex flex-col">
-	<nav class="bg-indigo-700 text-white shadow">
+<div class="min-h-screen bg-gray-950 flex flex-col">
+	<nav class="bg-indigo-950 text-white shadow border-b border-indigo-900">
 		<div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-8">
 			<span class="font-bold text-lg tracking-tight">Portfolio</span>
 			<div class="flex gap-4">
@@ -21,7 +23,7 @@
 						class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors
 							{$page.url.pathname === link.href
 								? 'bg-white/20 text-white'
-								: 'text-indigo-100 hover:bg-white/10'}"
+								: 'text-indigo-200 hover:bg-white/10'}"
 					>
 						{link.label}
 					</a>

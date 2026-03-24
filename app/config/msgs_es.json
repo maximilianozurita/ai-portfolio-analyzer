@@ -23,5 +23,11 @@
 	"CSV_SIN_ARCHIVO": "No se envió ningún archivo CSV.",
 	"CSV_STOCK_IMPORTADO": "{}/{} posiciones importadas correctamente.",
 	"STOCK_AJUSTADO": "Stock de {} ajustado correctamente.",
-	"ERROR_FACTOR_INVALIDO": "El factor debe ser un número mayor a 0."
+	"ERROR_FACTOR_INVALIDO": "El factor debe ser un número mayor a 0.",
+	"ERROR_LAMINAS_INSUFICIENTES": "No hay suficientes láminas, actuales: {}, a operar: {}.",
+	"BONO_HOLDING_ADDED": "Se agregó posición de bono.",
+	"BONO_HOLDING_UPDATED": "Se actualizó posición de bono.",
+	"BONO_HOLDING_DELETED": "Se eliminó posición de bono.",
+	"BONO_CUPON_REGISTRADO": "Cobro de cupón registrado.",
+	"CSV_BONO_IMPORTADO": "{}/{} posiciones de bonos importadas correctamente."
 }

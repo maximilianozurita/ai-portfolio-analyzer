@@ -6,8 +6,11 @@ from tests.unit_tests.models.test_stock import TestStock
 from tests.unit_tests.models.test_ticket import TestTicket
 from tests.unit_tests.models.test_conector import TestConector
 from tests.unit_tests.models.test_transaction import TestTransaction
+from tests.unit_tests.models.test_bond_holding import TestBondHolding
+from tests.unit_tests.models.test_bond_transaction import TestBondTransaction
 from tests.unit_tests.services.test_stock_service import TestStockService
 from tests.unit_tests.services.test_transaction_service import TestTransactionService
+from tests.unit_tests.services.test_bond_service import TestBondService
 # from tests.unit_tests.routes.test_stock_route import TestStockRoute
 # from tests.unit_tests.routes.test_transaction_route import TestTransactionRoute
 
@@ -17,12 +20,15 @@ modules = [
 	TestFactoryTransaction,
 	TestStockService,
 	TestTransactionService,
+	TestBondService,
 	# TestStockRoute,
 	# TestTransactionRoute,
 	TestStock,
 	TestTicket,
 	TestConector,
-	TestTransaction
+	TestTransaction,
+	TestBondHolding,
+	TestBondTransaction,
 ]
 
 def suite():

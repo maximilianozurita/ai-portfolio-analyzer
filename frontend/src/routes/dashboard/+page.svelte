@@ -28,12 +28,12 @@
 </script>
 
 <div class="space-y-8">
-	<h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+	<h1 class="text-2xl font-bold text-gray-100">Dashboard</h1>
 
 	{#if loading}
-		<p class="text-gray-400">Cargando...</p>
+		<p class="text-gray-500">Cargando...</p>
 	{:else if error}
-		<p class="text-red-500">{error}</p>
+		<p class="text-red-400">{error}</p>
 	{:else}
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 			<MetricCard title="Total Invertido" value="$ {formatNum(totalInvertido)}" />
@@ -42,17 +42,17 @@
 
 		{#if stocks.length > 0}
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				<div class="bg-white rounded-xl shadow p-6">
-					<h2 class="text-base font-semibold text-gray-700 mb-4">Distribución por ticker</h2>
+				<div class="bg-gray-900 border border-gray-800 rounded-xl shadow p-6">
+					<h2 class="text-base font-semibold text-gray-300 mb-4">Distribución por ticker</h2>
 					<DistributionChart {stocks} />
 				</div>
-				<div class="bg-white rounded-xl shadow p-6">
-					<h2 class="text-base font-semibold text-gray-700 mb-4">PPC por ticker</h2>
+				<div class="bg-gray-900 border border-gray-800 rounded-xl shadow p-6">
+					<h2 class="text-base font-semibold text-gray-300 mb-4">PPC por ticker</h2>
 					<PpcBarChart {stocks} />
 				</div>
 			</div>
 		{:else}
-			<p class="text-gray-400">Sin posiciones abiertas.</p>
+			<p class="text-gray-600">Sin posiciones abiertas.</p>
 		{/if}
 	{/if}
 </div>
