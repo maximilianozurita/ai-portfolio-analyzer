@@ -7,5 +7,5 @@ ticket_bp = Blueprint('tickets', __name__)
 @ticket_bp.route('/tickets', methods=['GET'])
 def get_tickets():
     tickets = Ticket.find_all()
-    data = [{"ticket_code": t.ticket_code, "name": t.name, "ratio": t.ratio} for t in tickets]
+    data = [{"ticket_code": t.ticket_code, "name": t.name} for t in tickets]
     return create_response({"ok": True, "data": data}), 200

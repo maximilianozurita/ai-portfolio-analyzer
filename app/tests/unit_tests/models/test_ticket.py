@@ -28,14 +28,14 @@ class TestTicket(TestBase):
 		# Se usa para verificacion de otros objetos que tienen una relacion con este.
 		ticket_code = "AAPL"
 		ticket_obj = Ticket(ticket_code)
-		errors, data = Ticket.check_ticket(ticket_code, ["name", "ratio", "date"])
+		errors, data = Ticket.check_ticket(ticket_code, ["name", "date"])
 		data["ticket_code"] = ticket_code
 		self.assertDictEqual(errors, {})
 		self.assert_attr_equals(ticket_obj, data)
 
 	def test_error_check_ticket(self):
 		ticket_code = "TICKETNOK"
-		errors, data = Ticket.check_ticket(ticket_code, ["name", "ratio", "date"])
+		errors, data = Ticket.check_ticket(ticket_code, ["name", "date"])
 		for key in data:
 			self.assertIsNone(data[key])
 		self.assertIsNotNone(errors["ERROR_ATTR_INCORRECTO"])

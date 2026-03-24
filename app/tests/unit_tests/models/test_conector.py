@@ -21,7 +21,6 @@ class TestConector(TestBase):
 		query = 'select * from transaction where id = %s'
 		select = conector.select_one(query, [transaction.id])
 		expected["id"] = select["id"]
-		expected["ratio"] = ticket_obj.ratio
 		self.assertDictEqual(expected, select)
 		expected["unit_price"] += 1
 		self.assertNotEqual(expected, select)
@@ -43,9 +42,8 @@ class TestConector(TestBase):
 		query = 'select * from transaction where ticket_code = %s'
 		select = conector.select(query, ["AAPL"])
 		expected["id"] = transaction.id
-		expected["ratio"] = ticket_obj.ratio
 		self.assertListEqual([expected], select)
-		expected["ratio"] +=1
+		expected["unit_price"] += 1
 		self.assertNotEqual([expected], select)
 
 
@@ -55,7 +53,7 @@ class TestConector(TestBase):
 		conector.cursor.fetchall()
 		conector.load_column_attr()
 		#En este caso se sabe que existen estos attrs
-		attrs = ['ticket_code', 'name', 'ratio', 'date']
+		attrs = ['ticket_code', 'name', 'date']
 		self.assertListEqual(attrs, conector.columnas_name)
 
 
@@ -64,7 +62,7 @@ class TestConector(TestBase):
 		conector.cursor.execute("select * from tickets")
 		conector.cursor.fetchone()
 		conector.load_column_attr()
-		attrs = ['ticket_code', 'name', 'ratio', 'date']
+		attrs = ['ticket_code', 'name', 'date']
 		self.assertListEqual(attrs, conector.columnas_name)
 
 

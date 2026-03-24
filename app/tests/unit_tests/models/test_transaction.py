@@ -34,10 +34,9 @@ class TestTransaction(TestBase):
 			"broker_name" : 1.2 ,
 			"quantity" : "b",
 			"date" : "a",
-			"ratio": "cincuenta"
 		}
 		error_expected = {
-			'ERROR_ATTR_TYPE': [['ratio', 'int', 'str'], ['transaction_key', 'int', 'str'], ['broker_name', 'str', 'float'], ['quantity', 'int', 'str'], ['date', 'int', 'str']], 
+			'ERROR_ATTR_TYPE': [['transaction_key', 'int', 'str'], ['broker_name', 'str', 'float'], ['quantity', 'int', 'str'], ['date', 'int', 'str']],
 			'ERROR_ATTR_NONE': [['unit_price'], ['usd_quote']]
 		}
 		self.generic_test_check_add(Transaction, data, False , error_expected)
@@ -46,7 +45,6 @@ class TestTransaction(TestBase):
 	def test_error_post_check_add(self):
 		data = {
 			"name" : 1,
-			"ratio": "cincuenta"
 		}
 		error_expected = {'ERROR_ATTR_NONE': [['id']]}
 		self.generic_test_check_add(Transaction, data, True , error_expected)

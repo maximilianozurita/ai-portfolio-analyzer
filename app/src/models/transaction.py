@@ -14,11 +14,6 @@ class Transaction(MainClass):
 			"type": str,
 			"column" : True
 		},
-		"ratio": {
-			"type": int,
-			"null" : True,
-			"column" : True
-		},
 		"transaction_key": {
 			"type": int,
 			"null" : True,
@@ -52,7 +47,7 @@ class Transaction(MainClass):
 
 	@staticmethod
 	def verify(data):
-		errors, ticket_data = Ticket.check_ticket(data["ticket_code"], ["ratio"])
+		errors, ticket_data = Ticket.check_ticket(data["ticket_code"], ["ticket_code"])
 		attrs_data = {**data, **ticket_data}
 		errors = Transaction.pre_check_add(attrs_data, errors)
 		return attrs_data, errors

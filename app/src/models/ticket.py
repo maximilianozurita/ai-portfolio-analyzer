@@ -10,7 +10,6 @@ class Ticket:
 				instance = super(Ticket, cls).__new__(cls)
 				instance.ticket_code = data["ticket_code"]
 				instance.name = data["name"]
-				instance.ratio = data["ratio"]
 				instance.date = data["date"]
 				return instance
 		return None

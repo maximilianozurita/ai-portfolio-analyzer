@@ -1,3 +1,6 @@
+import csv
+import io
+from datetime import datetime
 from src.models.stock import Stock
 from src.models.transaction import Transaction
 from src.utils.msgs_handler import msgsHandler
@@ -77,6 +80,50 @@ def add_transaction(data):
 	if errors:
 		return {"ok": False, "msg": msgs.get_message_masivo(errors)}
 	return {"ok": True, "msg": msgs.get_message("STOCK_UPDATED"), "data": updated_stock.get_attr_dict()}
+
+def import_from_csv(file):
+	if not file:
+		return {"ok": False, "msg": msgs.get_message("CSV_SIN_ARCHIVO")}
+
+	content = file.stream.read().decode('utf-8-sig')
+	dialect = csv.Sniffer().sniff(content.splitlines()[0], delimiters=',;')
+	stream = io.StringIO(content)
+	reader = csv.DictReader(stream, dialect=dialect)
+
+	ok_count = 0
+	errors = []
+
+	rows = sorted(reader, key=lambda r: r.get('date', '').strip())
+	for i, row in enumerate(rows, start=2):
+		try:
+			for field in ('ticket_code', 'quantity', 'unit_price', 'usd_quote', 'date'):
+				if not row.get(field, '').strip():
+					raise ValueError(f"Campo requerido '{field}' está vacío")
+
+			date_ts = int(datetime.strptime(row['date'].strip(), '%Y-%m-%d').timestamp())
+			data = {
+				'ticket_code': row['ticket_code'].strip(),
+				'quantity': int(row['quantity'].strip()),
+				'unit_price': float(row['unit_price'].strip()),
+				'usd_quote': int(row['usd_quote'].strip()),
+				'date': date_ts
+			}
+			if row.get('transaction_key', '').strip():
+				data['transaction_key'] = int(row['transaction_key'].strip())
+			if row.get('broker_name', '').strip():
+				data['broker_name'] = row['broker_name'].strip()
+
+			r = add_transaction(data)
+			if r['ok']:
+				ok_count += 1
+			else:
+				errors.append(f"Fila {i}: {r['msg']}")
+		except Exception as e:
+			errors.append(f"Fila {i}: {str(e)}")
+
+	total = ok_count + len(errors)
+	msg = msgs.get_message("CSV_IMPORTADO", [ok_count, total])
+	return {"ok": len(errors) == 0, "msg": msg, "data": {"ok": ok_count, "errors": errors}}
 
 def revert_transaction(id):
 	transaction = Transaction.find_by_id(id)

@@ -1,12 +1,17 @@
 <script>
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { getTickets, addTransaction } from '$lib/api.js';
+	import { getTickets, addTransaction, importTransactionsCsv } from '$lib/api.js';
 
 	let tickets = [];
 	let error = '';
 	let success = '';
 	let submitting = false;
+	let tab = 'manual';
+
+	let csvFile = null;
+	let csvResult = null;
+	let csvUploading = false;
 
 	let form = {
 		ticket_code: '',
@@ -55,119 +60,206 @@
 			submitting = false;
 		}
 	}
+
+	async function handleCsvUpload() {
+		if (!csvFile) return;
+		csvResult = null;
+		csvUploading = true;
+		try {
+			const res = await importTransactionsCsv(csvFile);
+			csvResult = { ok: res.status !== 'Error', msg: res.message, data: res.data };
+		} catch (e) {
+			csvResult = { ok: false, msg: e.message, data: null };
+		} finally {
+			csvUploading = false;
+		}
+	}
 </script>
 
 <div class="max-w-lg space-y-6">
 	<h1 class="text-2xl font-bold text-gray-800">Nueva Transacción</h1>
 
-	{#if error}
-		<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>
-	{/if}
-	{#if success}
-		<div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">{success}</div>
-	{/if}
+	<div class="flex border-b border-gray-200">
+		<button
+			on:click={() => { tab = 'manual'; error = ''; success = ''; }}
+			class="px-4 py-2 text-sm font-medium border-b-2 transition-colors
+				{tab === 'manual' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}"
+		>
+			Manual
+		</button>
+		<button
+			on:click={() => { tab = 'csv'; error = ''; success = ''; csvResult = null; }}
+			class="px-4 py-2 text-sm font-medium border-b-2 transition-colors
+				{tab === 'csv' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}"
+		>
+			Importar CSV
+		</button>
+	</div>
 
-	<form on:submit|preventDefault={handleSubmit} class="bg-white rounded-xl shadow p-6 space-y-5">
-		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1">Ticker</label>
-			<select
-				bind:value={form.ticket_code}
-				required
-				class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-			>
-				{#each tickets as t}
-					<option value={t.ticket_code}>{t.ticket_code} — {t.name}</option>
-				{/each}
-			</select>
-		</div>
+	{#if tab === 'manual'}
+		{#if error}
+			<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>
+		{/if}
+		{#if success}
+			<div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">{success}</div>
+		{/if}
 
-		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-			<div class="flex gap-6">
-				<label class="flex items-center gap-2 text-sm cursor-pointer">
-					<input type="radio" bind:group={form.tipo} value="compra" class="accent-indigo-600" />
-					Compra
-				</label>
-				<label class="flex items-center gap-2 text-sm cursor-pointer">
-					<input type="radio" bind:group={form.tipo} value="venta" class="accent-indigo-600" />
-					Venta
-				</label>
+		<form on:submit|preventDefault={handleSubmit} class="bg-white rounded-xl shadow p-6 space-y-5">
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Ticker</label>
+				<select
+					bind:value={form.ticket_code}
+					required
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+				>
+					{#each tickets as t}
+						<option value={t.ticket_code}>{t.ticket_code} — {t.name}</option>
+					{/each}
+				</select>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+				<div class="flex gap-6">
+					<label class="flex items-center gap-2 text-sm cursor-pointer">
+						<input type="radio" bind:group={form.tipo} value="compra" class="accent-indigo-600" />
+						Compra
+					</label>
+					<label class="flex items-center gap-2 text-sm cursor-pointer">
+						<input type="radio" bind:group={form.tipo} value="venta" class="accent-indigo-600" />
+						Venta
+					</label>
+				</div>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+				<input
+					type="number"
+					bind:value={form.quantity}
+					min="1"
+					step="1"
+					required
+					placeholder="Ej: 100"
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+				/>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Precio unitario</label>
+				<input
+					type="number"
+					bind:value={form.unit_price}
+					min="0"
+					step="any"
+					required
+					placeholder="Ej: 1250.50"
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+				/>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Cotización USD</label>
+				<input
+					type="number"
+					bind:value={form.usd_quote}
+					min="0"
+					step="1"
+					required
+					placeholder="Ej: 1000"
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+				/>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+				<input
+					type="date"
+					bind:value={form.date}
+					required
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+				/>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Broker <span class="text-gray-400">(opcional)</span></label>
+				<input
+					type="text"
+					bind:value={form.broker_name}
+					placeholder="Ej: IOL, Balanz..."
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+				/>
+			</div>
+
+			<div class="flex gap-3 pt-2">
+				<button
+					type="submit"
+					disabled={submitting}
+					class="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+				>
+					{submitting ? 'Guardando...' : 'Guardar'}
+				</button>
+				<a
+					href="/transactions"
+					class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+				>
+					Cancelar
+				</a>
+			</div>
+		</form>
+
+	{:else}
+		<div class="bg-white rounded-xl shadow p-6 space-y-5">
+			<div>
+				<p class="text-sm text-gray-600 mb-3">
+					El archivo CSV debe tener el siguiente formato:
+				</p>
+				<pre class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700 overflow-x-auto">ticket_code,quantity,unit_price,usd_quote,date,transaction_key,broker_name
+GGAL,100,450.50,1050,2024-03-15,,IOL
+MSFT,-10,380.00,1050,2024-03-20,,</pre>
+				<p class="text-xs text-gray-400 mt-2">
+					Cantidad negativa = venta. <code>transaction_key</code> y <code>broker_name</code> son opcionales.
+				</p>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Archivo CSV</label>
+				<input
+					type="file"
+					accept=".csv"
+					on:change={(e) => { csvFile = e.target.files[0]; csvResult = null; }}
+					class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+				/>
+			</div>
+
+			{#if csvResult}
+				<div class="rounded-lg px-4 py-3 text-sm {csvResult.ok ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}">
+					<p class="font-medium">{csvResult.msg}</p>
+					{#if csvResult.data?.errors?.length > 0}
+						<ul class="mt-2 space-y-1 list-disc list-inside">
+							{#each csvResult.data.errors as err}
+								<li>{err}</li>
+							{/each}
+						</ul>
+					{/if}
+				</div>
+			{/if}
+
+			<div class="flex gap-3 pt-2">
+				<button
+					on:click={handleCsvUpload}
+					disabled={!csvFile || csvUploading}
+					class="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+				>
+					{csvUploading ? 'Importando...' : 'Importar'}
+				</button>
+				<a
+					href="/transactions"
+					class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+				>
+					Cancelar
+				</a>
 			</div>
 		</div>
-
-		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-			<input
-				type="number"
-				bind:value={form.quantity}
-				min="1"
-				step="1"
-				required
-				placeholder="Ej: 100"
-				class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-			/>
-		</div>
-
-		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1">Precio unitario</label>
-			<input
-				type="number"
-				bind:value={form.unit_price}
-				min="0"
-				step="any"
-				required
-				placeholder="Ej: 1250.50"
-				class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-			/>
-		</div>
-
-		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1">Cotización USD</label>
-			<input
-				type="number"
-				bind:value={form.usd_quote}
-				min="0"
-				step="1"
-				required
-				placeholder="Ej: 1000"
-				class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-			/>
-		</div>
-
-		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-			<input
-				type="date"
-				bind:value={form.date}
-				required
-				class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-			/>
-		</div>
-
-		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1">Broker <span class="text-gray-400">(opcional)</span></label>
-			<input
-				type="text"
-				bind:value={form.broker_name}
-				placeholder="Ej: IOL, Balanz..."
-				class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-			/>
-		</div>
-
-		<div class="flex gap-3 pt-2">
-			<button
-				type="submit"
-				disabled={submitting}
-				class="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-			>
-				{submitting ? 'Guardando...' : 'Guardar'}
-			</button>
-			<a
-				href="/transactions"
-				class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-			>
-				Cancelar
-			</a>
-		</div>
-	</form>
+	{/if}
 </div>

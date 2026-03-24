@@ -1,7 +1,6 @@
 CREATE TABLE stats.tickets (
 	ticket_code varchar(50) PRIMARY KEY UNIQUE,
 	name varchar(50) not null,
-	ratio INT,
 	date BIGINT
 );
 
@@ -17,7 +16,6 @@ CREATE TABLE stats.stock (
 CREATE TABLE stats.transaction (
 	id INT AUTO_INCREMENT PRIMARY KEY UNIQUE,
 	ticket_code varchar(50) not null,
-	ratio INT,
 	transaction_key INT,
 	broker_name varchar(50),
 	quantity INT not null,

@@ -24,6 +24,13 @@ def delete_transaction(transaction_id):
 	code = 200 if r["ok"] else 500
 	return create_response(r), code
 
+@stock.route('/transactions/import', methods=['POST'])
+def import_transactions_csv():
+	file = request.files.get('file')
+	r = transaction_service.import_from_csv(file)
+	code = 200 if r["ok"] else 500
+	return create_response(r), code
+
 @stock.route('/transactions/<int:transaction_id>/revert', methods=['POST'])
 def revert_transaction(transaction_id):
 	r = transaction_service.revert_transaction(transaction_id)

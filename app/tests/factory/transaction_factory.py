@@ -16,8 +16,6 @@ class TransactionFactory(FactoryBase):
 		data["usd_quote"] = data.get("usd_quote") or random.randint(1,100)
 		data["unit_price"] = data.get("unit_price") or round(random.uniform(1.0,20.0), 4)
 		data["date"] = data.get("date") or int(datetime.now().timestamp())
-		if "ratio" in data:
-			data["ratio"] = data.get("ratio")
 		if "broker_name" in data:
 			data["broker_name"] = data.get("broker_name")
 		return data

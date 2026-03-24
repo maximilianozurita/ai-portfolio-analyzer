@@ -18,5 +18,10 @@
 	"STOCK_ADDED" : "Se agrego stock",
 	"STOCK_DELETED": "Se elimino stock",
 	"ELEMENTO_ENCONTRADO": "Elemento '{}' encontrado",
-	"TRANSACCION_REVERTIDA": "Transaccion revertida con exito"
+	"TRANSACCION_REVERTIDA": "Transaccion revertida con exito",
+	"CSV_IMPORTADO": "{}/{} transacciones importadas correctamente.",
+	"CSV_SIN_ARCHIVO": "No se envió ningún archivo CSV.",
+	"CSV_STOCK_IMPORTADO": "{}/{} posiciones importadas correctamente.",
+	"STOCK_AJUSTADO": "Stock de {} ajustado correctamente.",
+	"ERROR_FACTOR_INVALIDO": "El factor debe ser un número mayor a 0."
 }

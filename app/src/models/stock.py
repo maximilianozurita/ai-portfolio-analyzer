@@ -30,10 +30,6 @@ class Stock(MainClass):
 		"name": {
 			"type": str
 		},
-		"ratio": {
-			"type": int,
-			"null" : True
-		},
 	}
 
 	def __init__(self, data):
@@ -44,7 +40,7 @@ class Stock(MainClass):
 	def find_all():
 		conector = ConectorBase()
 		stock = []
-		query = "SELECT s.*, t.ratio as ratio, t.name as name from " + Stock._table + " s JOIN tickets t ON (s.ticket_code = t.ticket_code) ORDER BY s.ticket_code"
+		query = "SELECT s.*, t.name as name from " + Stock._table + " s JOIN tickets t ON (s.ticket_code = t.ticket_code) ORDER BY s.ticket_code"
 		filas = conector.select(query)
 		for fila in filas:
 			stock.append(Stock(fila))
@@ -54,7 +50,7 @@ class Stock(MainClass):
 	@staticmethod
 	def find_by_ticket(ticket_code):
 		conector = ConectorBase()
-		query = "SELECT s.*, t.ratio as ratio, t.name as name from " + Stock._table + " s JOIN tickets t ON (s.ticket_code = t.ticket_code) where s.ticket_code = %s"
+		query = "SELECT s.*, t.name as name from " + Stock._table + " s JOIN tickets t ON (s.ticket_code = t.ticket_code) where s.ticket_code = %s"
 		fila = conector.select_one(query, [ticket_code])
 		if fila:
 			return Stock(fila)
@@ -63,13 +59,13 @@ class Stock(MainClass):
 
 	@staticmethod
 	def verify(data):
-		errors, ticket_data = Ticket.check_ticket(data["ticket_code"], ["name", "ratio"])
+		errors, ticket_data = Ticket.check_ticket(data["ticket_code"], ["name"])
 		attrs_data = {**data, **ticket_data}
 		errors = Stock.pre_check_add(attrs_data, errors)
 		return attrs_data, errors
 
 	def verify_update(self, data):
-		ticket_data = {"ticket_code": self.ticket_code, "name": self.name, "ratio": self.ratio}
+		ticket_data = {"ticket_code": self.ticket_code, "name": self.name}
 		attrs_data = {**data, **ticket_data}
 		errors = Stock.check_update(attrs_data)
 		return attrs_data, errors
