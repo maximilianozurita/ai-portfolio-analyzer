@@ -1,15 +1,13 @@
 import mysql.connector
-from dotenv import load_dotenv
-import os
+from config.config import DB_HOST, DB_USER, DB_PASSWORD
 
 class ConectorBase:
 	def __init__(self):
-		load_dotenv()
 		self.connection = mysql.connector.connect(
-			host= os.getenv('DB_HOST'),
-			user= os.getenv('DB_USER'),
-			password= os.getenv('DB_PASSWORD'),
-			database= "stats"
+			host=DB_HOST,
+			user=DB_USER,
+			password=DB_PASSWORD,
+			database="stats"
 		)
 		self.cursor = self.connection.cursor()
 		self.columnas_name = []

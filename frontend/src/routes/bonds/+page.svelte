@@ -1,14 +1,17 @@
 <script>
 	import { onMount } from 'svelte';
-	import { getBondHoldings, getBondTransactions, revertBondTransaction, deleteBondTransaction, importBondCsv } from '$lib/api.js';
+	import { get } from 'svelte/store';
+	import { getBondHoldings, getBondTransactions, revertBondTransaction, deleteBondTransaction, importBondCsv, getMarketPricesBonds } from '$lib/api.js';
+	import { marketPricesBondsStore } from '$lib/stores.js';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import BondDistributionChart from '$lib/components/charts/BondDistributionChart.svelte';
-	import BondPpcParidadChart from '$lib/components/charts/BondPpcParidadChart.svelte';
 	import BondHoldingTable from '$lib/components/BondHoldingTable.svelte';
 	import BondTransactionTable from '$lib/components/BondTransactionTable.svelte';
 
 	let holdings = [];
 	let transactions = [];
+	let marketPrices = {};
+	let loadingPrices = false;
 	let error = '';
 	let loading = true;
 	let tab = 'holdings';
@@ -18,14 +21,19 @@
 	let csvResult = null;
 	let csvUploading = false;
 
-	$: totalInvertido = holdings.reduce((sum, h) => sum + (h.ppc * h.quantity) / 100, 0);
+	$: totalInvertido = holdings.reduce((sum, h) => sum + h.ppc * h.quantity, 0);
 	$: posicionesAbiertas = holdings.length;
+	$: totalActual = Object.values(marketPrices).reduce((sum, mp) => sum + (mp?.current_value ?? 0), 0);
+	$: hasMarketData = Object.keys(marketPrices).length > 0;
 
 	function formatNum(n) {
 		return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 	}
 
+	marketPricesBondsStore.subscribe(v => { marketPrices = v; });
+
 	onMount(async () => {
+		marketPrices = get(marketPricesBondsStore);
 		try {
 			[holdings, transactions] = await Promise.all([
 				getBondHoldings().then(d => d ?? []),
@@ -37,6 +45,18 @@
 			loading = false;
 		}
 	});
+
+	async function fetchMarketPrices() {
+		loadingPrices = true;
+		try {
+			const prices = (await getMarketPricesBonds()) ?? {};
+			marketPricesBondsStore.set(prices);
+		} catch (e) {
+			error = e.message;
+		} finally {
+			loadingPrices = false;
+		}
+	}
 
 	async function refresh() {
 		try {
@@ -84,7 +104,7 @@
 </script>
 
 <div class="space-y-6">
-	<h1 class="text-2xl font-bold text-gray-100">Bonos</h1>
+	<h1 class="text-2xl font-bold text-gray-100">Renta Fija</h1>
 
 	{#if error}
 		<div class="bg-red-950 border border-red-800 text-red-300 rounded-lg px-4 py-3 text-sm">{error}</div>
@@ -118,25 +138,38 @@
 		{#if loading}
 			<p class="text-gray-500">Cargando...</p>
 		{:else}
-			<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			<div class="grid grid-cols-1 sm:grid-cols-2 {hasMarketData ? 'lg:grid-cols-4' : ''} gap-4">
 				<MetricCard title="Total Invertido" value="$ {formatNum(totalInvertido)}" />
 				<MetricCard title="Posiciones Abiertas" value={posicionesAbiertas} subtitle="bonos activos" />
+				{#if hasMarketData}
+					<MetricCard title="Valor Actual" value="$ {formatNum(totalActual)}" />
+					<MetricCard
+						title="P&L Total"
+						value="{totalActual - totalInvertido >= 0 ? '+' : ''}$ {formatNum(totalActual - totalInvertido)}"
+						subtitle="{totalInvertido > 0 ? ((totalActual - totalInvertido) / totalInvertido * 100).toFixed(2) + '%' : ''}"
+					/>
+				{/if}
 			</div>
 
 			{#if holdings.length > 0}
-				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					<div class="bg-gray-900 border border-gray-800 rounded-xl shadow p-6">
-						<h2 class="text-base font-semibold text-gray-300 mb-4">Distribución por bono</h2>
-						<BondDistributionChart {holdings} />
-					</div>
-					<div class="bg-gray-900 border border-gray-800 rounded-xl shadow p-6">
-						<h2 class="text-base font-semibold text-gray-300 mb-4">PPC Paridad por bono</h2>
-						<BondPpcParidadChart {holdings} />
-					</div>
+				<div class="flex items-center justify-between mb-2">
+					<p class="text-xs text-gray-500">Precios via Yahoo Finance (BYMA · ARS)</p>
+					<button
+						on:click={fetchMarketPrices}
+						disabled={loadingPrices}
+						class="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+					>
+						{loadingPrices ? 'Actualizando...' : 'Actualizar precios'}
+					</button>
+				</div>
+
+				<div class="bg-gray-900 border border-gray-800 rounded-xl shadow p-6">
+					<h2 class="text-base font-semibold text-gray-300 mb-4">Distribución por bono</h2>
+					<BondDistributionChart {holdings} {marketPrices} />
 				</div>
 			{/if}
 
-			<BondHoldingTable {holdings} />
+			<BondHoldingTable {holdings} {marketPrices} />
 		{/if}
 
 	{:else if tab === 'transactions'}

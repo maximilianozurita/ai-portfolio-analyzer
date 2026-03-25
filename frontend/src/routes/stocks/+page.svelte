@@ -1,9 +1,16 @@
 <script>
 	import { onMount } from 'svelte';
-	import { getStocks, importStockCsv, adjustStock } from '$lib/api.js';
+	import { get } from 'svelte/store';
+	import { getStocks, importStockCsv, adjustStock, getMarketPricesStocks } from '$lib/api.js';
+	import { marketPricesStocksStore } from '$lib/stores.js';
 	import StockTable from '$lib/components/StockTable.svelte';
+	import MetricCard from '$lib/components/MetricCard.svelte';
+	import DistributionChart from '$lib/components/charts/DistributionChart.svelte';
+	import RendimientoChart from '$lib/components/charts/RendimientoChart.svelte';
 
 	let stocks = [];
+	let marketPrices = {};
+	let loadingPrices = false;
 	let error = '';
 	let loading = true;
 	let tab = 'holdings';
@@ -23,7 +30,19 @@
 		? stocks.find(s => s.ticket_code === adjTicket)
 		: null;
 
+	$: totalInvertido = stocks.reduce((sum, s) => sum + s.ppc * s.quantity, 0);
+	$: posicionesAbiertas = stocks.length;
+	$: hasMarketData = Object.keys(marketPrices).length > 0;
+	$: totalActual = stocks.reduce((sum, s) => sum + (marketPrices[s.ticket_code]?.current_value ?? s.ppc * s.quantity), 0);
+	$: pnlTotal = totalActual - totalInvertido;
+	$: pnlPct = totalInvertido > 0 ? pnlTotal / totalInvertido * 100 : 0;
+
+	// Suscribirse al store para que el componente reaccione a cambios externos
+	marketPricesStocksStore.subscribe(v => { marketPrices = v; });
+
 	onMount(async () => {
+		// Restaurar precios cacheados
+		marketPrices = get(marketPricesStocksStore);
 		try {
 			stocks = (await getStocks()) ?? [];
 		} catch (e) {
@@ -32,6 +51,18 @@
 			loading = false;
 		}
 	});
+
+	async function fetchMarketPrices() {
+		loadingPrices = true;
+		try {
+			const prices = (await getMarketPricesStocks()) ?? {};
+			marketPricesStocksStore.set(prices);
+		} catch (e) {
+			error = e.message;
+		} finally {
+			loadingPrices = false;
+		}
+	}
 
 	async function handleCsvUpload() {
 		if (!csvFile) return;
@@ -69,7 +100,7 @@
 </script>
 
 <div class="space-y-6">
-	<h1 class="text-2xl font-bold text-gray-100">Holdings</h1>
+	<h1 class="text-2xl font-bold text-gray-100">Renta Variable</h1>
 
 	<div class="flex border-b border-gray-700">
 		<button
@@ -101,7 +132,48 @@
 		{:else if error}
 			<p class="text-red-400">{error}</p>
 		{:else}
-			<StockTable {stocks} />
+			<div class="grid grid-cols-2 {hasMarketData ? 'lg:grid-cols-4' : ''} gap-4">
+				<MetricCard title="Total Invertido" value="$ {formatNum(totalInvertido)}" />
+				<MetricCard title="Posiciones Abiertas" value={posicionesAbiertas} subtitle="tickers activos" />
+				{#if hasMarketData}
+					<MetricCard title="Valor Actual" value="$ {formatNum(totalActual)}" />
+					<MetricCard
+						title="P&L Total"
+						value="{pnlTotal >= 0 ? '+' : ''}$ {formatNum(pnlTotal)}"
+						subtitle="{pnlTotal >= 0 ? '+' : ''}{formatNum(pnlPct)}%"
+					/>
+				{/if}
+			</div>
+
+			{#if stocks.length > 0}
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+					<div class="bg-gray-900 border border-gray-800 rounded-xl shadow p-6">
+						<h2 class="text-base font-semibold text-gray-300 mb-4">Distribución por ticker</h2>
+						<DistributionChart {stocks} {marketPrices} />
+					</div>
+					<div class="bg-gray-900 border border-gray-800 rounded-xl shadow p-6">
+						{#if hasMarketData && stocks.some(s => marketPrices[s.ticket_code]?.pnl_pct != null)}
+							<h2 class="text-base font-semibold text-gray-300 mb-4">Rendimiento por ticker</h2>
+							<RendimientoChart {stocks} {marketPrices} />
+						{:else}
+							<h2 class="text-base font-semibold text-gray-300 mb-4">Rendimiento</h2>
+							<p class="text-sm text-gray-600 mt-8 text-center">Actualizá los precios para ver el rendimiento por ticker.</p>
+						{/if}
+					</div>
+				</div>
+			{/if}
+
+			<div class="flex items-center justify-between">
+				<p class="text-xs text-gray-500">Precios via Yahoo Finance (BYMA · ARS)</p>
+				<button
+					on:click={fetchMarketPrices}
+					disabled={loadingPrices}
+					class="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+				>
+					{loadingPrices ? 'Actualizando...' : 'Actualizar precios'}
+				</button>
+			</div>
+			<StockTable {stocks} {marketPrices} />
 		{/if}
 
 	{:else if tab === 'adjust'}

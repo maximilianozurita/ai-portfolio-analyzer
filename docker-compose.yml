@@ -32,7 +32,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./app:/workspace/app
+      - ./backend:/workspace/app
 
   frontend:
     build: ./frontend

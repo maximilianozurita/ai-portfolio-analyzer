@@ -4,12 +4,17 @@
 
 	const links = [
 		{ href: '/dashboard', label: 'Dashboard' },
-		{ href: '/stocks', label: 'Holdings' },
+		{ href: '/stocks', label: 'Renta Variable' },
+		{ href: '/bonds', label: 'Renta Fija' },
 		{ href: '/transactions', label: 'Transacciones' },
-		{ href: '/transactions/new', label: 'Nueva Transacción' },
-		{ href: '/bonds', label: 'Bonos' },
-		{ href: '/bond-transactions/new', label: 'Nueva Op. Bono' }
+		{ href: '/operaciones/nueva', label: 'Nueva Operación' },
+		{ href: '/analyze', label: 'Analizar con IA' }
 	];
+
+	$: activePath = (href) => {
+		const p = $page.url.pathname;
+		return p === href || (href !== '/dashboard' && p.startsWith(href));
+	};
 </script>
 
 <div class="min-h-screen bg-gray-950 flex flex-col">
@@ -21,7 +26,7 @@
 					<a
 						href={link.href}
 						class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors
-							{$page.url.pathname === link.href
+							{activePath(link.href)
 								? 'bg-white/20 text-white'
 								: 'text-indigo-200 hover:bg-white/10'}"
 					>

@@ -5,7 +5,7 @@ WORKDIR /workspace/app
 COPY requirements.txt /workspace/requirements.txt
 RUN pip install --no-cache-dir -r /workspace/requirements.txt
 
-COPY app/ .
+COPY backend/ .
 
 EXPOSE 5000
 CMD ["python", "App.py"]

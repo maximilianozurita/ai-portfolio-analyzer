@@ -38,16 +38,17 @@ def calculate_by_bond_transaction(bond_txn, holding=None):
 		return {
 			"bond_code": bond_txn.bond_code,
 			"quantity": bond_txn.quantity,
-			"ppc": bond_txn.unit_price,
+			"ppc": round(bond_txn.unit_price / 100, 6),
 			"ppc_paridad": round(bond_txn.unit_price / bond_txn.valor_tecnico, 6),
 			"weighted_date": bond_txn.date
 		}
 
 	paridad = round(bond_txn.unit_price / bond_txn.valor_tecnico, 6)
+	unit_price_norm = bond_txn.unit_price / 100
 
 	if bond_txn.transaction_type == 'compra':
 		new_qty = holding.quantity + bond_txn.quantity
-		new_ppc = round((holding.ppc * holding.quantity + bond_txn.unit_price * bond_txn.quantity) / new_qty, 4)
+		new_ppc = round((holding.ppc * holding.quantity + unit_price_norm * bond_txn.quantity) / new_qty, 6)
 		new_ppc_paridad = round((holding.ppc_paridad * holding.quantity + paridad * bond_txn.quantity) / new_qty, 6)
 		new_date = int((holding.weighted_date * holding.quantity + bond_txn.date * bond_txn.quantity) / new_qty)
 		return {"bond_code": bond_txn.bond_code, "quantity": new_qty,
@@ -71,7 +72,8 @@ def calculate_revert_bond_transaction(bond_txn, holding):
 		if new_qty == 0:
 			return {"quantity": 0}
 		paridad = round(bond_txn.unit_price / bond_txn.valor_tecnico, 6)
-		new_ppc = round((holding.ppc * holding.quantity - bond_txn.unit_price * bond_txn.quantity) / new_qty, 4)
+		unit_price_norm = bond_txn.unit_price / 100
+		new_ppc = round((holding.ppc * holding.quantity - unit_price_norm * bond_txn.quantity) / new_qty, 6)
 		new_ppc_paridad = round((holding.ppc_paridad * holding.quantity - paridad * bond_txn.quantity) / new_qty, 6)
 		new_date = int((holding.weighted_date * holding.quantity - bond_txn.date * bond_txn.quantity) / new_qty)
 		return {"bond_code": holding.bond_code, "quantity": new_qty,
@@ -149,7 +151,7 @@ def import_bond_holding_from_csv(file):
 			data = {
 				'bond_code': bond_code,
 				'quantity': int(row['quantity'].strip()),
-				'ppc': float(row['ppc'].strip()),
+				'ppc': round(float(row['ppc'].strip()) / 100, 6),
 				'ppc_paridad': float(row['ppc_paridad'].strip()),
 				'weighted_date': date_ts,
 			}
