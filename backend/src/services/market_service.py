@@ -1,6 +1,38 @@
+import json
+import requests
+import urllib3
 import yfinance as yf
 from src.models.stock import Stock
 from src.models.bond_holding import BondHolding
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def _fetch_bond_prices_byma() -> dict:
+	"""Obtiene precios de bonos desde BYMA Open Data (sin auth, ~20 min delay).
+	Retorna {bond_code_upper: price_ars} o {} si la API falla."""
+	url = "https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/public-bonds"
+	payload = json.dumps({"excludeZeroPxAndQty": False, "T2": True, "T1": False, "T0": False})
+	headers = {
+		"Content-Type": "application/json",
+		"Accept": "application/json, text/plain, */*",
+		"Origin": "https://open.bymadata.com.ar",
+		"Referer": "https://open.bymadata.com.ar/",
+		"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+	}
+	try:
+		resp = requests.post(url, data=payload, headers=headers, timeout=15, verify=False)
+		resp.raise_for_status()
+		items = resp.json().get("data") or []
+		prices = {}
+		for item in items:
+			symbol = item.get("simbolo") or item.get("symbol") or ""
+			price = item.get("ultimoPrecio") or item.get("precioPromedioPonderado")
+			if symbol and price:
+				prices[symbol.strip().upper()] = float(price)
+		return prices
+	except Exception:
+		return {}
 
 
 def _fetch_prices(tickers_ba: list[str]) -> dict:
@@ -65,19 +97,29 @@ def get_stock_prices():
 
 def get_bond_prices():
 	"""Retorna precios actuales en ARS para todas las posiciones de bonos abiertas.
-	La cobertura de bonos soberanos en Yahoo Finance es parcial; los no disponibles
-	se retornan con price=null."""
+	Intenta BYMA Open Data primero (cobertura completa, ~20 min delay).
+	Para los no encontrados en BYMA, usa Yahoo Finance como fallback."""
 	holdings = BondHolding.find_all() or []
 	if not holdings:
 		return {"ok": True, "data": {}}
 
-	tickers_ba = [f"{h.bond_code}.BA" for h in holdings]
-	raw = _fetch_prices(tickers_ba)
+	byma_prices = _fetch_bond_prices_byma()
+
+	missing_tickers_ba = [
+		f"{h.bond_code}.BA"
+		for h in holdings
+		if h.bond_code.upper() not in byma_prices
+	]
+	yf_raw = _fetch_prices(missing_tickers_ba) if missing_tickers_ba else {}
 
 	result = {}
 	for h in holdings:
-		ba_ticker = f"{h.bond_code}.BA"
-		raw_price = raw.get(ba_ticker)
+		code_upper = h.bond_code.upper()
+		if code_upper in byma_prices:
+			raw_price = byma_prices[code_upper]
+		else:
+			raw_price = yf_raw.get(f"{h.bond_code}.BA")
+
 		price = round(raw_price / 100, 6) if raw_price is not None else None
 		entry = {"price": price, "currency": "ARS"}
 		if price is not None:
