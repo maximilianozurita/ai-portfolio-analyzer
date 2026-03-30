@@ -74,5 +74,3 @@ Los tests de rutas están parcialmente comentados, probablemente porque requiere
 ## Tabla `tokens`
 
 Existe una tabla `tokens` en el schema con campos de OAuth (access_token, refresh_token, expires). En el código actual no hay autenticación de usuarios implementada. La tabla puede ser un vestigio de una implementación planificada o en progreso.
-
-> ⚠️ No verificado en el código fuente — no se encontraron referencias activas a esta tabla en los servicios o rutas actuales.
