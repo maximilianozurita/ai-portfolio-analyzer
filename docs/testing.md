@@ -71,8 +71,6 @@ Los tests de modelos y servicios interactúan con la base de datos. Se necesita:
 2. El schema inicializado (`DB/init/01_schema.sql`)
 3. Variables de entorno configuradas en `backend/.env`
 
-> ⚠️ No hay configuración de base de datos de test separada verificada en el código. Los tests pueden correr contra la misma DB de desarrollo. Confirmar antes de correr en un ambiente con datos reales.
-
 ---
 
 ## Agregar nuevos tests
