@@ -1,115 +1,155 @@
-# Estructura del proyecto
+# Project Structure
 
-## Árbol de directorios
+## Directory tree
 
 ```
 ai-portfolio-analyzer/
 │
-├── docker-compose.yml          # Orquestación: db (MySQL 8), api (Flask), frontend (SvelteKit)
-├── requirements.txt            # Dependencias Python del backend
-├── .env.example                # Template de variables de entorno
-├── CLAUDE.md                   # Instrucciones para Claude Code
-├── README.md                   # Documentación principal
+├── docker-compose.yml          # Orchestration: db (MySQL 8), api (Flask), frontend (SvelteKit)
+├── requirements.txt            # Python backend dependencies
+├── .env.example                # Environment variables template
+├── CLAUDE.md                   # Instructions for Claude Code
+├── README.md                   # Main documentation
 │
 ├── backend/
-│   ├── App.py                  # Entry point Flask — registra blueprints, habilita CORS
+│   ├── App.py                  # Flask entry point — registers blueprints, enables CORS
 │   │
 │   ├── config/
-│   │   ├── config.py           # Carga variables de entorno con python-dotenv
-│   │   └── msgs_es.json        # Mensajes de error centralizados en español
+│   │   ├── config.py           # Loads environment variables with python-dotenv
+│   │   └── msgs_es.json        # Centralized error messages in Spanish
 │   │
 │   ├── src/
 │   │   ├── routes/
-│   │   │   ├── routes_base.py          # Helper: create_response() — formato estándar de respuesta
+│   │   │   ├── routes_base.py          # Helper: create_response() — standard response format
 │   │   │   ├── stocks.py               # Blueprint /stocks — GET, POST /import, POST /adjust
-│   │   │   ├── bonds.py                # Blueprint /bond-* — holdings y transacciones
+│   │   │   ├── bonds.py                # Blueprint /bond-* — holdings and transactions
 │   │   │   ├── transactions.py         # Blueprint /transactions — CRUD + revert + import
-│   │   │   ├── tickets.py              # Blueprint /tickets — catálogo de tickers
-│   │   │   ├── ai.py                   # Blueprint /ai — providers y análisis
-│   │   │   └── market.py               # Blueprint /market — precios en tiempo real
+│   │   │   ├── tickets.py              # Blueprint /tickets — ticker catalog
+│   │   │   ├── ai.py                   # Blueprint /ai — providers and analysis
+│   │   │   └── market.py               # Blueprint /market — real-time prices
 │   │   │
 │   │   ├── services/
-│   │   │   ├── service_base.py         # Base de servicios (si existe lógica compartida)
-│   │   │   ├── stock_service.py        # PPC, importación CSV, ajuste de posiciones
-│   │   │   ├── bond_service.py         # PPC, paridad, lógica de cupón/amortización
-│   │   │   ├── transaction_service.py  # Registro, reversión, recálculo de holding
-│   │   │   ├── market_service.py       # Yahoo Finance + BYMA, cálculo P&L
-│   │   │   ├── ai_service.py           # Prompt builder, selección de provider
+│   │   │   ├── service_base.py         # Service base (shared logic)
+│   │   │   ├── stock_service.py        # PPC, CSV import, position adjustment
+│   │   │   ├── bond_service.py         # PPC, parity, coupon/amortization logic
+│   │   │   ├── transaction_service.py  # Recording, reverting, holding recalculation
+│   │   │   ├── market_service.py       # Yahoo Finance + BYMA, P&L calculation
+│   │   │   ├── ai_service.py           # Prompt builder, provider selection
 │   │   │   └── ai_providers/
-│   │   │       ├── base_provider.py    # Interfaz abstracta (Strategy pattern)
+│   │   │       ├── base_provider.py    # Abstract interface (Strategy pattern)
 │   │   │       ├── gemini_provider.py  # Google Gemini
 │   │   │       ├── openai_provider.py  # OpenAI GPT
-│   │   │       └── openrouter_provider.py  # OpenRouter (modelos free)
+│   │   │       └── openrouter_provider.py  # OpenRouter (free models)
 │   │   │
 │   │   ├── models/
-│   │   │   ├── main_class.py           # Base model: validación, CRUD, query params
-│   │   │   ├── conector.py             # Wrapper MySQL: execute_query, select, select_one
-│   │   │   ├── stock.py                # Tabla stock: find_all, find_by_ticket, add, update
-│   │   │   ├── transaction.py          # Tabla transaction
-│   │   │   ├── bond_holding.py         # Tabla bond_holding
-│   │   │   ├── bond_transaction.py     # Tabla bond_transaction (tipos: compra/venta/cupon/amortizacion)
-│   │   │   └── ticket.py               # Tabla tickets (patrón factory con __new__)
+│   │   │   ├── main_class.py           # Base model: validation, CRUD, query params
+│   │   │   ├── conector.py             # MySQL wrapper: execute_query, select, select_one
+│   │   │   ├── stock.py                # Table stock: find_all, find_by_ticket, add, update
+│   │   │   ├── transaction.py          # Table transaction
+│   │   │   ├── bond_holding.py         # Table bond_holding
+│   │   │   ├── bond_transaction.py     # Table bond_transaction (types: compra/venta/cupon/amortizacion)
+│   │   │   └── ticket.py               # Table tickets (factory pattern with __new__)
 │   │   │
 │   │   └── utils/
-│   │       └── msgs_handler.py         # Manejo de mensajes de error desde msgs_es.json
+│   │       └── msgs_handler.py         # Error message handling from msgs_es.json
 │   │
 │   ├── scripts/
-│   │   └── get_data_portfolio.py       # Script utilitario para extracción de datos
+│   │   └── get_data_portfolio.py       # Utility script for data extraction
 │   │
 │   └── tests/
-│       ├── suite_unit_test.py          # Runner principal — agrega todos los test cases
-│       ├── factory/                    # Factories de datos para tests (Stock, Transaction)
-│       └── unit_tests/                 # Tests por módulo (models, services, utils, routes)
+│       ├── suite_unit_test.py          # Main runner — builds and runs all test cases
+│       ├── factory/
+│       │   ├── factory_base.py         # FactoryBase: base class with init_obj and attr_parser
+│       │   ├── factory_register.py     # FactoryRegister: unified registry with automatic cleanup
+│       │   ├── stock_factory.py        # Factory for Stock
+│       │   ├── transaction_factory.py  # Factory for Transaction
+│       │   ├── bond_holding_factory.py # Factory for BondHolding
+│       │   └── bond_transaction_factory.py  # Factory for BondTransaction
+│       └── unit_tests/
+│           ├── base.py                 # TestBase: shared setUp/tearDown with FactoryRegister
+│           ├── factory_test/           # Factory tests
+│           ├── models/                 # Per-model tests (test_stock.py, test_bond_holding.py, etc.)
+│           ├── services/               # Service tests (test_stock_service.py, etc.)
+│           ├── routes/                 # Route tests (disabled in suite)
+│           └── utils/                  # Utility tests
 │
 ├── frontend/
 │   ├── package.json                    # SvelteKit + echarts + marked + Tailwind
 │   └── src/
+│       ├── lib/
+│       │   ├── api.js                  # All backend calls (fetch wrappers)
+│       │   ├── stores.js               # Svelte stores for market price caching
+│       │   └── components/
+│       │       ├── StockTable.svelte
+│       │       ├── TransactionTable.svelte
+│       │       ├── BondHoldingTable.svelte
+│       │       ├── BondTransactionTable.svelte
+│       │       ├── MetricCard.svelte
+│       │       └── charts/
+│       │           ├── DistributionChart.svelte
+│       │           ├── BondDistributionChart.svelte
+│       │           ├── CombinedDistributionChart.svelte
+│       │           ├── PpcBarChart.svelte
+│       │           ├── BondPpcParidadChart.svelte
+│       │           └── RendimientoChart.svelte
 │       └── routes/
-│           ├── +layout.svelte          # Layout global con barra de navegación
-│           ├── +page.svelte            # Redirect a /dashboard
+│           ├── +layout.svelte          # Global layout with navigation bar
+│           ├── +page.svelte            # Redirect to /dashboard
 │           ├── dashboard/
-│           │   └── +page.svelte        # Métricas globales + gráficos de distribución y rendimiento
+│           │   └── +page.svelte        # Global metrics + distribution and performance charts
 │           ├── stocks/
-│           │   └── +page.svelte        # Tabla de posiciones en acciones
+│           │   └── +page.svelte        # Equity positions table
 │           ├── bonds/
-│           │   └── +page.svelte        # Tabla de posiciones en bonos
-│           ├── transactions/           # Historial de transacciones de acciones
-│           ├── bond-transactions/      # Historial de transacciones de bonos
+│           │   └── +page.svelte        # Bond positions table
+│           ├── transactions/
+│           │   ├── +page.svelte        # Stock transaction history
+│           │   └── new/
+│           │       └── +page.svelte    # New stock transaction form + CSV import
+│           ├── bond-transactions/
+│           │   └── new/
+│           │       └── +page.svelte    # New bond transaction form
 │           ├── operaciones/
-│           │   └── nueva/              # Formulario de nueva operación (acción o bono)
+│           │   └── nueva/
+│           │       └── +page.svelte    # New operation form (stock or bond)
 │           └── analyze/
-│               └── +page.svelte        # Interfaz de análisis IA: selector de provider/modelo, resultado Markdown
+│               └── +page.svelte        # AI analysis interface: provider/model selector, Markdown result
 │
 └── DB/
     ├── init/
-    │   ├── 01_schema.sql               # Definición completa del schema (tablas, FK, ENUM)
-    │   └── 02_tickets.sql              # Carga inicial: 50+ tickers de BYMA y mercado internacional
-    ├── changes/                        # Scripts de migración
+    │   ├── 01_schema.sql               # Full schema definition (tables, FK, ENUM)
+    │   └── 02_tickets.sql              # Seed data: 50+ BYMA and international tickers
+    ├── changes/                        # Migration scripts
+    ├── staticTables/
+    │   └── tabla_tickets.json          # Static ticker catalog data
     └── scripts/
-        └── update_table.py             # Script utilitario para actualizaciones de tablas
+        └── update_table.py             # Utility script for table updates
 ```
 
 ---
 
-## Responsabilidades por capa
+## Layer responsibilities
 
 ### `src/routes/`
-Solo HTTP: parsear la request, llamar al servicio correspondiente, retornar `create_response()`. No debe contener lógica de negocio ni queries a la DB.
+HTTP only: parse the request, call the corresponding service, return `create_response()`. Must not contain business logic or direct DB queries.
 
 ### `src/services/`
-Toda la lógica de negocio vive aquí. Un servicio puede llamar a múltiples modelos y coordinar operaciones compuestas (ej. registrar una transacción y actualizar el holding en la misma operación). No hace queries directamente — delega a los modelos.
+All business logic lives here. A service can call multiple models and coordinate composite operations (e.g. recording a transaction and updating the holding in the same operation). Does not query directly — delegates to models.
 
 ### `src/models/`
-Acceso a datos exclusivamente. Cada modelo corresponde a una tabla. `MainClass` provee la validación de campos y los métodos CRUD genéricos. `ConectorBase` en `conector.py` gestiona la conexión MySQL.
+Data access exclusively. Each model corresponds to a table. `MainClass` provides field validation and generic CRUD methods. `ConectorBase` in `conector.py` manages the MySQL connection.
+
+### `frontend/src/lib/`
+Code shared across pages. `api.js` centralizes all HTTP calls to the backend — no page does `fetch` directly. `stores.js` keeps market prices cached in Svelte stores to avoid redundant calls within the same session.
 
 ### `frontend/src/routes/`
-Cada directorio es una página SvelteKit. El archivo `+layout.svelte` envuelve a todas las páginas con la navegación común. La comunicación con el backend se hace directamente desde los componentes Svelte via fetch a la URL configurada en `PUBLIC_API_URL`.
+Each directory is a SvelteKit page. `+layout.svelte` wraps all pages with common navigation. Pages consume `api.js` and stores from `lib/`, and delegate table and chart rendering to components in `lib/components/`.
 
 ---
 
-## Convenciones
+## Conventions
 
-- Los archivos de routes siguen el nombre del dominio: `stocks.py`, `bonds.py`, etc.
-- Los servicios tienen sufijo `_service`: `stock_service.py`
-- Los modelos coinciden con el nombre de la tabla en singular: `stock.py`, `transaction.py`
-- Los mensajes de error al usuario están en `config/msgs_es.json`, nunca hardcodeados en el código
+- Route files follow the domain name: `stocks.py`, `bonds.py`, etc.
+- Services have a `_service` suffix: `stock_service.py`
+- Models match the table name in singular: `stock.py`, `transaction.py`
+- Test files have a `test_` prefix: `test_stock.py`, `test_bond_service.py`
+- User-facing error messages are in `config/msgs_es.json`, never hardcoded in the source

@@ -1,109 +1,101 @@
-# Instalación
+# Installation
 
-## Requisitos previos
+## Prerequisites
 
-- Docker y Docker Compose (recomendado)
-- O: Python 3.10+, MySQL 8.0, Node.js 18+ (desarrollo local)
+- Docker and Docker Compose (recommended)
+- Or: Python 3.10+, MySQL 8.0, Node.js 18+ (local development)
 
 ---
 
-## Opción A: Docker (recomendada)
+## Option A: Docker (recommended)
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 
 ```bash
 git clone <repo-url>
 cd ai-portfolio-analyzer
 ```
 
-### 2. Configurar variables de entorno
+### 2. Configure environment variables
 
 ```bash
-cp .env.example backend/.env
+cp .env.example .env
 ```
 
-Editar `backend/.env`:
+Edit `.env`. The DB defaults work out of the box with Docker Compose. What requires manual configuration is at least one AI API key:
 
 ```env
-# Base de datos (no cambiar si usás Docker)
-DB_HOST=db
-DB_USER=root
-DB_PASSWORD=tu_password_segura
-
-# AI — completar al menos UNA
-GEMINI_API_KEY=     # Google AI Studio (tiene tier gratuito)
+# AI — fill in at least ONE
+GEMINI_API_KEY=     # Google AI Studio (free tier available)
 OPENAI_API_KEY=     # OpenAI platform
-OPENROUTER_API_KEY= # OpenRouter (modelos gratuitos disponibles)
+OPENROUTER_API_KEY= # OpenRouter (free models available)
 ```
 
-> El `DB_HOST=db` apunta al nombre del servicio de Docker Compose. Para desarrollo local usar `localhost`.
-
-### 3. Levantar los servicios
+### 3. Start the services
 
 ```bash
 docker compose build
 docker compose up -d
 ```
 
-### 4. Verificar que funciona
+### 4. Verify it works
 
 ```bash
-# Estado de los contenedores
+# Container status
 docker compose ps
 
-# Logs del backend
+# Backend logs
 docker compose logs api
 
-# Test rápido de la API
+# Quick API test
 curl http://localhost:5001/tickets
 ```
 
-- API REST: http://localhost:5001
+- REST API: http://localhost:5001
 - Frontend: http://localhost:5173
 
 ---
 
-## Opción B: Desarrollo local
+## Option B: Local development
 
 ### Backend
 
 ```bash
-# Instalar dependencias Python
+# Install Python dependencies
 pip install -r requirements.txt
 
-# Configurar variables de entorno
-cp .env.example backend/.env
-# Editar backend/.env con DB_HOST=localhost y credenciales locales
+# Configure environment variables
+cp .env.example .env
+# Edit .env with DB_HOST=localhost and local credentials
 
-# Inicializar la base de datos MySQL
+# Initialize the MySQL database
 mysql -u root -p < DB/init/01_schema.sql
 mysql -u root -p < DB/init/02_tickets.sql
 
-# Levantar el servidor Flask
+# Start the Flask server (from the project root)
 python backend/App.py
-# API disponible en http://localhost:5000
+# API available at http://localhost:5000
 ```
 
-> En desarrollo local el puerto por defecto de Flask es 5000. Docker expone el 5001.
+> In local development the default Flask port is 5000. Docker exposes 5001 (configurable with `API_PORT` in `.env`).
 
 ### Frontend
 
 ```bash
 cd frontend
 
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Configurar la URL del backend
-# Crear frontend/.env con:
+# Configure the backend URL in .env (project root)
 # PUBLIC_API_URL=http://localhost:5000
 
-# Levantar el servidor de desarrollo
+# Start the development server
 npm run dev
-# Frontend disponible en http://localhost:5173
+# Frontend available at http://localhost:5173
 ```
 
-Para build de producción:
+For a production build:
 
 ```bash
 npm run build
@@ -112,41 +104,51 @@ npm run preview
 
 ---
 
-## Variables de entorno — referencia completa
+## Environment variables — full reference
 
-| Variable | Requerida | Descripción |
-|----------|-----------|-------------|
-| `DB_HOST` | Sí | Host de MySQL (`db` en Docker, `localhost` en local) |
-| `DB_USER` | Sí | Usuario de MySQL |
-| `DB_PASSWORD` | Sí | Password de MySQL |
-| `GEMINI_API_KEY` | No* | API key de Google Gemini |
-| `OPENAI_API_KEY` | No* | API key de OpenAI |
-| `OPENROUTER_API_KEY` | No* | API key de OpenRouter |
+All variables are configured in a single `.env` at the project root. Docker Compose and the Flask backend (`python-dotenv`) both read from that file.
 
-*Al menos una API key de IA es necesaria para usar la funcionalidad de análisis.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DB_ROOT_PASSWORD` | Yes (Docker) | MySQL root user password |
+| `DB_NAME` | Yes | Database name |
+| `DB_USER` | Yes | MySQL user |
+| `DB_PASSWORD` | Yes | MySQL user password |
+| `API_PORT` | No | Host port for the API (default: `5001`) |
+| `FRONTEND_PORT` | No | Host port for the frontend (default: `5173`) |
+| `PUBLIC_API_URL` | No | URL the browser uses to reach the API (default: `http://localhost:5001`) |
+| `GEMINI_API_KEY` | No* | Google Gemini API key |
+| `OPENAI_API_KEY` | No* | OpenAI API key |
+| `OPENROUTER_API_KEY` | No* | OpenRouter API key |
+
+*At least one AI API key is required to use the analysis feature.
+
+> `PUBLIC_API_URL` is relevant when accessing from another device on the network (e.g. via Tailscale). In that case it must point to the IP or hostname reachable from the client's browser.
+
+> In Docker, `DB_HOST` is always `db` (the service name in the Compose internal network) and is not set in `.env`. In local development, the backend reads it from `.env` — set `DB_HOST=localhost`.
 
 ---
 
-## Puertos
+## Ports
 
-| Servicio | Puerto |
-|----------|--------|
+| Service | Port |
+|---------|------|
 | MySQL | 3307 (Docker) / 3306 (local) |
-| Flask API | 5001 (Docker) / 5000 (local) |
-| SvelteKit | 5173 |
+| Flask API | `API_PORT` (default 5001, Docker) / 5000 (local) |
+| SvelteKit | `FRONTEND_PORT` (default 5173) |
 
 ---
 
-## Solución de problemas comunes
+## Troubleshooting
 
-**La API no conecta a la DB**
-- Verificar que `DB_HOST=db` en Docker o `DB_HOST=localhost` en local
-- En Docker, esperar a que el healthcheck del servicio `db` pase: `docker compose ps`
+**API cannot connect to the DB**
+- In Docker: verify that the `db` service healthcheck passes before `api` tries to connect: `docker compose ps`
+- In local: verify that `DB_HOST=localhost` is in `.env` and that MySQL is running
 
-**El análisis de IA no funciona**
-- Verificar que al menos una `*_API_KEY` esté configurada en `backend/.env`
-- El endpoint `GET /ai/providers` retorna los providers disponibles según las keys presentes
+**AI analysis does not work**
+- Verify that at least one `*_API_KEY` is configured in `.env`
+- The `GET /ai/providers` endpoint returns available providers based on the keys present
 
-**Precios de mercado no cargan**
-- `yfinance` requiere acceso a internet; verificar conectividad
-- Los tickers argentinos deben tener sufijo `.BA` en Yahoo Finance
+**Market prices do not load**
+- `yfinance` requires internet access; verify connectivity
+- Argentine tickers must have the `.BA` suffix on Yahoo Finance

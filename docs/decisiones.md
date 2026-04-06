@@ -1,76 +1,76 @@
-# Decisiones técnicas
+# Technical decisions
 
 ## Stack
 
-### Flask sobre FastAPI o Django
+### Flask over FastAPI or Django
 
-Flask permite una arquitectura mínima y explícita. Para un sistema de este tamaño (6 dominios, sin auth compleja, sin workers async) no justifica la complejidad de Django ni el overhead de aprender el modelo async de FastAPI. Los blueprints de Flask mapean directamente al modelo de capas usado.
+Flask allows a minimal and explicit architecture. For a system of this size (6 domains, no complex auth, no async workers) neither Django's complexity nor FastAPI's async model overhead is justified. Flask blueprints map directly to the layered model used.
 
-### MySQL sobre PostgreSQL u ORM
+### MySQL over PostgreSQL or ORM
 
-Se usa `mysql-connector-python` directamente sin ORM. Las ventajas:
-- Queries explícitas y predecibles (sin magia de ORM)
-- Control total sobre los tipos de datos (timestamps UNIX como BIGINT, etc.)
-- Sin overhead de abstracción para un schema relativamente simple
+`mysql-connector-python` is used directly without an ORM. The advantages:
+- Explicit and predictable queries (no ORM magic)
+- Full control over data types (UNIX timestamps as BIGINT, etc.)
+- No abstraction overhead for a relatively simple schema
 
-La desventaja es más código repetitivo en los modelos, mitigado por `MainClass` que provee CRUD genérico.
+The trade-off is more boilerplate in models, mitigated by `MainClass` which provides generic CRUD.
 
 ### SvelteKit
 
-SvelteKit combina el framework de UI (Svelte) con el router. Para una SPA con múltiples vistas y estado reactivo, es más liviano que React + React Router y tiene mejor DX que Vue para proyectos sin equipo de frontend dedicado.
+SvelteKit combines the UI framework (Svelte) with the router. For a SPA with multiple views and reactive state, it is lighter than React + React Router and has better DX than Vue for projects without a dedicated frontend team.
 
 ---
 
-## Arquitectura de datos
+## Data architecture
 
-### Timestamps UNIX en lugar de columnas DATE/DATETIME
+### UNIX timestamps instead of DATE/DATETIME columns
 
-Las fechas se almacenan como `BIGINT` (timestamp UNIX). Evita problemas de timezone entre el backend Python, la DB MySQL y el frontend JavaScript, que todos manejan timestamps UNIX nativamente.
+Dates are stored as `BIGINT` (UNIX timestamp). This avoids timezone issues between the Python backend, MySQL DB, and JavaScript frontend, all of which handle UNIX timestamps natively.
 
-### PPC recalculado por software, no por triggers
+### PPC recalculated in software, not via triggers
 
-El precio promedio de compra (PPC) se recalcula en `TransactionService.calculate_by_transaction()` y `BondService.calculate_by_bond_transaction()` al registrar o revertir transacciones. No hay triggers en la DB.
+The weighted average cost (PPC) is recalculated in `TransactionService.calculate_by_transaction()` and `BondService.calculate_by_bond_transaction()` when recording or reverting transactions. There are no DB triggers.
 
-**Por qué**: Los triggers son difíciles de testear y debuggear. Tener la lógica en Python permite unit tests directos y trazabilidad completa en el código.
+**Why**: Triggers are hard to test and debug. Having the logic in Python allows direct unit tests and full traceability in the code.
 
-### `bond_holding` y `bond_transaction` como tablas separadas
+### `bond_holding` and `bond_transaction` as separate tables
 
-Los bonos tienen lógica más compleja que las acciones (cupones, amortizaciones, paridad). Separar el holding del historial de transacciones permite recalcular el estado actual replicando las transacciones en orden, lo que hace posible la reversión (`revert`).
-
----
-
-## Providers de IA — patrón Strategy
-
-Los tres providers (Gemini, OpenAI, OpenRouter) implementan la misma interfaz `BaseProvider`. El servicio `AiService` no sabe qué provider está usando: recibe un string `provider` y lo resuelve en tiempo de ejecución.
-
-**Beneficio**: agregar un nuevo provider (ej. Anthropic, Cohere) solo requiere crear un archivo nuevo en `ai_providers/` sin tocar el servicio ni las rutas.
-
-**OpenRouter como alternativa free**: OpenRouter actúa como proxy de múltiples modelos. Incluir Llama, DeepSeek y Mistral como opciones gratuitas permite usar la funcionalidad de análisis sin costo.
+Bonds have more complex logic than stocks (coupons, amortizations, parity). Separating the holding from the transaction history allows recalculating the current state by replaying transactions in order, which makes reverting (`revert`) possible.
 
 ---
 
-## Precios de bonos: BYMA primero, Yahoo Finance como fallback
+## AI providers — Strategy pattern
 
-BYMA es la fuente oficial de datos para el mercado argentino, pero tiene ~20 minutos de delay y la API puede no estar siempre disponible. Yahoo Finance tiene mejor uptime pero los datos de bonos argentinos pueden ser inconsistentes.
+The three providers (Gemini, OpenAI, OpenRouter) implement the same `BaseProvider` interface. `AiService` does not know which provider it is using: it receives a `provider` string and resolves it at runtime.
 
-La estrategia de fallback garantiza disponibilidad sin sacrificar precisión cuando BYMA está accesible.
+**Benefit**: adding a new provider (e.g. Anthropic, Cohere) only requires creating a new file in `ai_providers/` without touching the service or routes.
 
----
-
-## Manejo de errores en español
-
-Los mensajes de error al usuario están centralizados en `config/msgs_es.json`. El dominio es el mercado de capitales argentino y los usuarios son inversores locales. Tener los mensajes en un archivo JSON (en lugar de strings en el código) permite revisarlos y actualizarlos sin buscar en el código fuente.
+**OpenRouter as a free alternative**: OpenRouter acts as a proxy for multiple models. Including Llama, DeepSeek, and Mistral as free options allows using the analysis feature at no cost.
 
 ---
 
-## Tests con factories
+## Bond prices: BYMA first, Yahoo Finance as fallback
 
-Los tests usan factories (`tests/factory/`) para crear datos de prueba. Esto evita fixtures estáticos que se desactualizan y hace que los tests sean más legibles al describir el dato que se está construyendo, no solo su valor.
+BYMA is the official data source for the Argentine market, but has ~20 minutes of delay and the API is not always available. Yahoo Finance has better uptime but Argentine bond data can be inconsistent.
 
-Los tests de rutas están parcialmente comentados, probablemente porque requieren una DB real y no están integrados en el CI.
+The fallback strategy guarantees availability without sacrificing accuracy when BYMA is accessible.
 
 ---
 
-## Tabla `tokens`
+## Error messages in Spanish
 
-Existe una tabla `tokens` en el schema con campos de OAuth (access_token, refresh_token, expires). En el código actual no hay autenticación de usuarios implementada. La tabla puede ser un vestigio de una implementación planificada o en progreso.
+User-facing error messages are centralized in `config/msgs_es.json`. The domain is the Argentine capital market and users are local investors. Keeping messages in a JSON file (rather than strings in the code) allows reviewing and updating them without searching through source files.
+
+---
+
+## Tests with factories
+
+Tests use factories (`tests/factory/`) to create test data. This avoids static fixtures that go stale and makes tests more readable by describing the data being constructed, not just its value.
+
+Route tests are partially commented out, likely because they require a live DB and are not integrated into CI.
+
+---
+
+## `tokens` table
+
+There is a `tokens` table in the schema with OAuth fields (access_token, refresh_token, expires). No user authentication is implemented in the current code. The table may be a remnant of a planned or in-progress implementation.

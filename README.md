@@ -1,84 +1,86 @@
 # AI Portfolio Analyzer
 
-Gestor de inversiones argentino con análisis de IA. Rastrea posiciones en renta variable (acciones) y renta fija (bonos), obtiene precios de mercado en tiempo real y genera análisis del portfolio usando modelos de lenguaje (Gemini, OpenAI, OpenRouter).
+Argentine investment portfolio manager with AI analysis. Tracks equity (stocks) and fixed-income (bonds) positions, fetches real-time market prices, and generates portfolio analysis using language models (Gemini, OpenAI, OpenRouter).
 
-## Documentación
+## Documentation
 
 | | |
 |---|---|
-| [Arquitectura](docs/arquitectura.md) | Diseño del sistema, componentes y flujo de datos |
-| [Estructura](docs/estructura.md) | Organización del proyecto y responsabilidades |
-| [Instalación](docs/instalacion.md) | Requisitos y pasos para correr el proyecto |
-| [Decisiones técnicas](docs/decisiones.md) | Trade-offs y justificaciones de diseño |
-| [API](docs/api.md) | Endpoints, request/response y ejemplos |
-| [Testing](docs/testing.md) | Cómo correr tests y estrategia de cobertura |
+| [Architecture](docs/arquitectura.md) | System design, components and data flow |
+| [Structure](docs/estructura.md) | Project organization and responsibilities |
+| [Installation](docs/instalacion.md) | Requirements and steps to run the project |
+| [Technical decisions](docs/decisiones.md) | Trade-offs and design justifications |
+| [API](docs/api.md) | Endpoints, request/response and examples |
+| [Testing](docs/testing.md) | How to run tests and coverage strategy |
 
 ---
 
-## Descripción
+## Description
 
-Aplicación web para inversores argentinos que necesitan consolidar y analizar su cartera de inversiones. Permite:
+Web application for Argentine investors who need to consolidate and analyze their investment portfolio. It allows you to:
 
-- Registrar compras/ventas de acciones y bonos con cálculo automático de PPC (precio promedio de compra)
-- Actualizar precios de mercado desde Yahoo Finance y BYMA
-- Calcular P&L en tiempo real
-- Solicitar análisis de la cartera a modelos de IA, con respuesta en formato estructurado
+- Record stock and bond buy/sell operations with automatic PPC (weighted average cost) calculation
+- Update market prices from Yahoo Finance and BYMA
+- Calculate real-time P&L
+- Request portfolio analysis from AI models, with a structured 7-section response
 
-## Uso rápido
+## Quick start
 
 ```bash
-cp .env.example backend/.env
-# Editar backend/.env con credenciales de DB y al menos una API key de IA
+cp .env.example .env
+# Edit .env with at least one AI API key
 docker compose up -d
 # API: http://localhost:5001
 # Frontend: http://localhost:5173
 ```
 
-## Tecnologías
+## Technologies
 
 **Backend**
 - Python 3 + Flask + Flask-CORS
 - MySQL 8.0 (driver: mysql-connector-python)
-- yfinance — precios de acciones (Yahoo Finance)
-- google-generativeai, openai — clientes de IA
+- yfinance — stock prices (Yahoo Finance)
+- google-generativeai, openai — AI clients
 
 **Frontend**
-- SvelteKit con file-based routing
-- Apache ECharts 5 — gráficos
-- marked — renderizado de Markdown
+- SvelteKit with file-based routing
+- Apache ECharts 5 — charts
+- marked — Markdown rendering
 - Tailwind CSS
 
-**Infraestructura**
-- Docker Compose (3 servicios: db, api, frontend)
+**Infrastructure**
+- Docker Compose (3 services: db, api, frontend)
 
-## Instalación rápida
+## Quick installation
 
-1. Clonar el repo y copiar `.env.example` a `backend/.env`
-2. Completar credenciales de base de datos y al menos una API key de IA
-3. `docker compose up -d`
+1. Clone the repo and copy `.env.example` to `.env`
+2. Fill in at least one AI API key (DB credentials have working defaults)
+3. `docker compose build && docker compose up -d`
 
-Ver [docs/instalacion.md](docs/instalacion.md) para instrucciones completas, incluyendo desarrollo local sin Docker.
+See [docs/instalacion.md](docs/instalacion.md) for complete instructions, including local development without Docker.
 
-## Arquitectura (resumen)
+## Architecture (summary)
 
-Backend Flask en 3 capas (routes → services → models) + frontend SvelteKit. Los providers de IA son intercambiables mediante el patrón Strategy. Ver [docs/arquitectura.md](docs/arquitectura.md).
+3-layer Flask backend (routes → services → models) + SvelteKit frontend. AI providers are interchangeable via the Strategy pattern. The frontend caches market prices in Svelte stores and passes them to the analysis endpoint, avoiding redundant calls. See [docs/arquitectura.md](docs/arquitectura.md).
 
-## Estructura del proyecto
+## Project structure
 
 ```
 ai-portfolio-analyzer/
-├── backend/          # API Flask
+├── backend/          # Flask API
 │   ├── App.py        # Entry point
-│   ├── config/       # Config y mensajes de error
+│   ├── config/       # Config and error messages
 │   └── src/
-│       ├── routes/   # Blueprints HTTP
-│       ├── services/ # Lógica de negocio
-│       └── models/   # Acceso a datos (MySQL)
+│       ├── routes/   # HTTP Blueprints
+│       ├── services/ # Business logic + AI providers
+│       └── models/   # Data access (MySQL)
 ├── frontend/         # SvelteKit app
-│   └── src/routes/   # Páginas
-├── DB/               # Schema SQL e inicialización
+│   └── src/
+│       ├── lib/      # api.js, stores.js, reusable components
+│       └── routes/   # Pages
+├── DB/               # SQL schema and initialization
+├── .env.example      # Environment variables template
 └── docker-compose.yml
 ```
 
-Ver [docs/estructura.md](docs/estructura.md) para el árbol completo con explicaciones.
-
+See [docs/estructura.md](docs/estructura.md) for the full annotated tree.
